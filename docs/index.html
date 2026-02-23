@@ -676,9 +676,32 @@
     </div>
 
     <script>
+        // GITHUB PAGES MODE - Radi sa demo podacima (bez API)
         const API_URL = 'http://localhost:7000/api';
+        const DEMO_MODE = window.location.hostname.includes('github.io');
         let currentUser = null;
         let currentToken = null;
+
+        // Demo podaci za GitHub Pages
+        const DEMO_USERS = {
+            'admin': { username: 'admin', email: 'admin@autoservis.com', full_name: 'Administrator', role: 'admin', phone: '+381601234567', created_at: '2026-01-01' },
+            'user': { username: 'user', email: 'user@test.com', full_name: 'Test Korisnik', role: 'user', phone: '+381609876543', created_at: '2026-01-15' }
+        };
+
+        const DEMO_SERVICES = [
+            { id: 1, name: 'Redovan servis', description: 'Zamena ulja, filtera i pregled vozila', price: 80.00, duration_minutes: 90, category: 'Održavanje' },
+            { id: 2, name: 'Mali servis', description: 'Zamena ulja i filtera', price: 50.00, duration_minutes: 60, category: 'Održavanje' },
+            { id: 3, name: 'Veliki servis', description: 'Kompletan pregled i zamena delova', price: 150.00, duration_minutes: 180, category: 'Održavanje' },
+            { id: 4, name: 'Dijagnostika', description: 'Kompjuterska dijagnostika vozila', price: 30.00, duration_minutes: 30, category: 'Dijagnostika' },
+            { id: 5, name: 'Popravka kočnica', description: 'Zamena pločica i diskova', price: 120.00, duration_minutes: 120, category: 'Kočni sistem' },
+            { id: 6, name: 'Zamena ulja', description: 'Zamena motornog ulja i filtera', price: 40.00, duration_minutes: 45, category: 'Održavanje' },
+            { id: 7, name: 'Zamena guma', description: 'Sezonska zamena pneumatika', price: 25.00, duration_minutes: 30, category: 'Gume' },
+            { id: 8, name: 'Geometrija točkova', description: 'Podešavanje geometrije', price: 35.00, duration_minutes: 60, category: 'Trapezarija' }
+        ];
+
+        let DEMO_VEHICLES = [];
+        let DEMO_APPOINTMENTS = [];
+        let demoIdCounter = 1;
 
         // ====================  AUTH FUNCTIONS ====================
 
@@ -700,6 +723,21 @@
             e.preventDefault();
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
+
+            if (DEMO_MODE) {
+                // GitHub Pages demo mode
+                if ((username === 'admin' && password === 'admin123') || (username === 'user' && password === 'user123')) {
+                    currentUser = DEMO_USERS[username];
+                    currentToken = 'demo-token-' + Date.now();
+                    localStorage.setItem('token', currentToken);
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    showApp();
+                    loadDashboard();
+                } else {
+                    showAuthError('Pogrešan username ili lozinka! Demo: admin/admin123 ili user/user123');
+                }
+                return;
+            }
 
             try {
                 const response = await fetch(`${API_URL}/auth/login`, {
@@ -826,6 +864,11 @@
         // ====================  API FUNCTIONS ====================
 
         async function apiCall(endpoint, method = 'GET', body = null) {
+            if (DEMO_MODE) {
+                // GitHub Pages demo mode - lokalni podaci
+                return handleDemoApi(endpoint, method, body);
+            }
+
             const options = {
                 method,
                 headers: {
@@ -842,6 +885,72 @@
             } catch (err) {
                 return { ok: false, data: { error: err.message }, status: 500 };
             }
+        }
+
+        function handleDemoApi(endpoint, method, body) {
+            // Simuliraj API pozive sa lokalnim demo podacima
+            if (endpoint === '/vehicles') {
+                if (method === 'POST') {
+                    const newVehicle = { ...body, id: demoIdCounter++, user_id: 1 };
+                    DEMO_VEHICLES.push(newVehicle);
+                    return Promise.resolve({ ok: true, data: { vehicle: newVehicle } });
+                }
+                return Promise.resolve({ ok: true, data: { vehicles: DEMO_VEHICLES } });
+            }
+            
+            if (endpoint.startsWith('/vehicles/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                DEMO_VEHICLES = DEMO_VEHICLES.filter(v => v.id !== id);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/services') {
+                if (method === 'POST' && currentUser.role === 'admin') {
+                    const newService = { ...body, id: demoIdCounter++ };
+                    DEMO_SERVICES.push(newService);
+                    return Promise.resolve({ ok: true, data: { service: newService } });
+                }
+                return Promise.resolve({ ok: true, data: { services: DEMO_SERVICES } });
+            }
+
+            if (endpoint.startsWith('/services/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                const idx = DEMO_SERVICES.findIndex(s => s.id === id);
+                if (idx >= 0) DEMO_SERVICES.splice(idx, 1);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/appointments') {
+                if (method === 'POST') {
+                    const vehicle = DEMO_VEHICLES.find(v => v.id === body.vehicle_id);
+                    const service = DEMO_SERVICES.find(s => s.id === body.service_id);
+                    const newApp = {
+                        ...body,
+                        id: demoIdCounter++,
+                        user_id: 1,
+                        status: 'scheduled',
+                        total_price: service ? service.price : 0,
+                        make: vehicle ? vehicle.make : 'N/A',
+                        model: vehicle ? vehicle.model : 'N/A',
+                        service_name: service ? service.name : 'N/A'
+                    };
+                    DEMO_APPOINTMENTS.push(newApp);
+                    return Promise.resolve({ ok: true, data: { appointment: newApp } });
+                }
+                return Promise.resolve({ ok: true, data: { appointments: DEMO_APPOINTMENTS } });
+            }
+
+            if (endpoint.startsWith('/appointments/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                DEMO_APPOINTMENTS = DEMO_APPOINTMENTS.filter(a => a.id !== id);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/notifications') {
+                return Promise.resolve({ ok: true, data: { notifications: [] } });
+            }
+
+            return Promise.resolve({ ok: true, data: {} });
         }
 
         // ====================  VEHICLES FUNCTIONS ====================

@@ -258,6 +258,27 @@ class AutoServiceDB:
 
     # ==================== USER METHODS ====================
 
+    def create_user(self, username: str, email: str, password: str, 
+                   full_name: str = "", phone: str = "", role: str = "user") -> int:
+        """Create a new user."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        try:
+            password_hash = self._hash_password(password)
+            cursor.execute('''
+                INSERT INTO users (username, email, password_hash, full_name, phone, role)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (username, email, password_hash, full_name, phone, role))
+            
+            user_id = cursor.lastrowid
+            conn.commit()
+            conn.close()
+            return user_id
+        except Exception:
+            conn.close()
+            return None
+
     def verify_user(self, username: str, password: str) -> Optional[Dict]:
         """Verify user credentials and return user data if valid."""
         conn = self.get_connection()
@@ -485,6 +506,24 @@ class AutoServiceDB:
         conn.close()
         return [dict(v) for v in vehicles]
 
+    def create_vehicle(self, user_id: int, make: str, model: str, year: int = None,
+                      vin: str = None, license_plate: str = None, color: str = None,
+                      engine_type: str = None, mileage: int = None, notes: str = None) -> int:
+        """Create a new vehicle."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO vehicles (user_id, make, model, year, vin, license_plate, 
+                                 color, engine_type, mileage, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (user_id, make, model, year, vin, license_plate, color, engine_type, mileage, notes))
+        
+        vehicle_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return vehicle_id
+
     def get_vehicle_by_id(self, vehicle_id: int) -> Optional[Dict]:
         """Get vehicle by ID."""
         conn = self.get_connection()
@@ -534,8 +573,265 @@ class AutoServiceDB:
 
     # ==================== SERVICE METHODS ====================
 
-    def add_service(self, name: str, price: float, description: str = "", 
-                   duration_minutes: int = 60, category: str = "") -> Tuple[bool, str, Optional[int]]:
+    def create_service(self, name: str, price: float, description: str = "", 
+                      duration_minutes: int = 60, category: str = "") -> int:
+        """Create a new service."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO services (name, description, price, duration_minutes, category)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (name, description, price, duration_minutes, category))
+        
+        service_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return service_id
+
+    def get_all_services(self) -> List[Dict]:
+        """Get all services."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM services WHERE is_active = 1 ORDER BY name")
+        services = cursor.fetchall()
+        conn.close()
+        return [dict(s) for s in services]
+
+    def get_service_by_id(self, service_id: int) -> Optional[Dict]:
+        """Get service by ID."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM services WHERE id = ?", (service_id,))
+        service = cursor.fetchone()
+        conn.close()
+        return dict(service) if service else None
+
+    def update_service(self, service_id: int, **kwargs) -> bool:
+        """Update service information."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        allowed_fields = ['name', 'description', 'price', 'duration_minutes', 'category', 'is_active']
+        
+        updates = []
+        values = []
+        for key, value in kwargs.items():
+            if key in allowed_fields and value is not None:
+                updates.append(f"{key} = ?")
+                values.append(value)
+        
+        if not updates:
+            conn.close()
+            return False
+        
+        values.append(service_id)
+        query = f"UPDATE services SET {', '.join(updates)}, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        
+        cursor.execute(query, values)
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
+
+    def delete_service(self, service_id: int) -> bool:
+        """Delete a service."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM services WHERE id = ?", (service_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
+
+    # ==================== APPOINTMENT METHODS ====================
+
+    def create_appointment(self, user_id: int, vehicle_id: int, service_id: int,
+                          appointment_date: str, notes: str = "") -> int:
+        """Create a new appointment."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        # Get service price
+        cursor.execute("SELECT price FROM services WHERE id = ?", (service_id,))
+        service = cursor.fetchone()
+        total_price = service['price'] if service else 0
+        
+        cursor.execute('''
+            INSERT INTO appointments (user_id, vehicle_id, service_id, appointment_date, 
+                                    notes, total_price, status)
+            VALUES (?, ?, ?, ?, ?, ?, 'scheduled')
+        ''', (user_id, vehicle_id, service_id, appointment_date, notes, total_price))
+        
+        appointment_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return appointment_id
+
+    def get_user_appointments(self, user_id: int) -> List[Dict]:
+        """Get appointments for a user."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT a.*, s.name as service_name, v.make, v.model, v.license_plate
+            FROM appointments a
+            JOIN services s ON a.service_id = s.id
+            JOIN vehicles v ON a.vehicle_id = v.id
+            WHERE a.user_id = ?
+            ORDER BY a.appointment_date DESC
+        ''', (user_id,))
+        
+        appointments = cursor.fetchall()
+        conn.close()
+        return [dict(a) for a in appointments]
+
+    def get_all_appointments(self) -> List[Dict]:
+        """Get all appointments."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT a.*, s.name as service_name, v.make, v.model, v.license_plate,
+                   u.full_name as user_name, u.email, u.phone
+            FROM appointments a
+            JOIN services s ON a.service_id = s.id
+            JOIN vehicles v ON a.vehicle_id = v.id
+            JOIN users u ON a.user_id = u.id
+            ORDER BY a.appointment_date DESC
+        ''')
+        
+        appointments = cursor.fetchall()
+        conn.close()
+        return [dict(a) for a in appointments]
+
+    def get_appointment_by_id(self, appointment_id: int) -> Optional[Dict]:
+        """Get appointment by ID."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM appointments WHERE id = ?", (appointment_id,))
+        appointment = cursor.fetchone()
+        conn.close()
+        return dict(appointment) if appointment else None
+
+    def update_appointment(self, appointment_id: int, **kwargs) -> bool:
+        """Update appointment."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        allowed_fields = ['appointment_date', 'status', 'notes', 'technician_notes', 'total_price']
+        
+        updates = []
+        values = []
+        for key, value in kwargs.items():
+            if key in allowed_fields and value is not None:
+                updates.append(f"{key} = ?")
+                values.append(value)
+        
+        if not updates:
+            conn.close()
+            return False
+        
+        if kwargs.get('status') == 'completed':
+            updates.append("completed_at = CURRENT_TIMESTAMP")
+        
+        updates.append("updated_at = CURRENT_TIMESTAMP")
+        values.append(appointment_id)
+        
+        query = f"UPDATE appointments SET {', '.join(updates)} WHERE id = ?"
+        cursor.execute(query, values)
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
+
+    def delete_appointment(self, appointment_id: int) -> bool:
+        """Delete an appointment."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM appointments WHERE id = ?", (appointment_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
+
+    # ==================== NOTIFICATION METHODS ====================
+
+    def create_notification(self, user_id: Optional[int], title: str, message: str,
+                          notification_type: str = 'info', 
+                          related_appointment_id: int = None) -> int:
+        """Create a notification."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute('''
+            INSERT INTO notifications (user_id, title, message, notification_type, related_appointment_id)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, title, message, notification_type, related_appointment_id))
+        
+        notification_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        return notification_id
+
+    def get_user_notifications(self, user_id: int) -> List[Dict]:
+        """Get notifications for a user."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT * FROM notifications 
+            WHERE user_id = ? 
+            ORDER BY sent_at DESC
+        ''', (user_id,))
+        
+        notifications = cursor.fetchall()
+        conn.close()
+        return [dict(n) for n in notifications]
+
+    def get_notification_by_id(self, notification_id: int) -> Optional[Dict]:
+        """Get notification by ID."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM notifications WHERE id = ?", (notification_id,))
+        notification = cursor.fetchone()
+        conn.close()
+        return dict(notification) if notification else None
+
+    def mark_notification_read(self, notification_id: int) -> bool:
+        """Mark notification as read."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("UPDATE notifications SET is_read = 1 WHERE id = ?", (notification_id,))
+        conn.commit()
+        success = cursor.rowcount > 0
+        conn.close()
+        return success
+
+    # ==================== SETTINGS METHODS ====================
+
+    def get_all_settings(self) -> List[Dict]:
+        """Get all settings."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM settings")
+        settings = cursor.fetchall()
+        conn.close()
+        return [dict(s) for s in settings]
+
+    def set_setting(self, key: str, value: str) -> bool:
+        """Set a setting."""
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM settings WHERE key = ?", (key,))
+        exists = cursor.fetchone()
+        
+        if exists:
+            cursor.execute("UPDATE settings SET value = ? WHERE key = ?", (value, key))
+        else:
+            cursor.execute("INSERT INTO settings (key, value) VALUES (?, ?)", (key, value))
+        
+        conn.commit()
+        conn.close()
+        return True
         """Add a new service."""
         conn = self.get_connection()
         cursor = conn.cursor()

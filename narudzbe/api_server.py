@@ -162,6 +162,7 @@ def login():
         return jsonify({
             'success': True,
             'token': token,
+            'session_token': token,
             'user': user
         }), 200
         
@@ -203,6 +204,7 @@ def register():
             return jsonify({
                 'success': True,
                 'token': token,
+                'session_token': token,
                 'user': user
             }), 201
         else:

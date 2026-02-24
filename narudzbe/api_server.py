@@ -678,11 +678,16 @@ def internal_error(error):
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("Auto Servis Pro API Server")
+    print("🚗 Auto Servis Pro API Server")
     print("=" * 60)
-    print("Server starting on http://localhost:7000")
-    print("API Documentation: http://localhost:7000/")
-    print("Health Check: http://localhost:7000/api/health")
+    print(f"✅ Server running on:")
+    print(f"   Local:   http://localhost:7000")
+    print(f"   Network: http://0.0.0.0:7000")
+    print(f"\n📍 API Endpoints:")
+    print(f"   Health: http://localhost:7000/api/health")
+    print(f"   Login:  http://localhost:7000/api/auth/login")
+    print(f"\n👤 Demo accounts:")
+    print(f"   admin/admin123 | user/user123")
     print("=" * 60)
     
     app.run(

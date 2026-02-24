@@ -15,11 +15,10 @@ cd /d "%~dp0"
 REM Activate virtual environment
 if exist ".venv\Scripts\activate.bat" (
     call .venv\Scripts\activate.bat
+) else if exist ".venv\bin\activate" (
+    call .venv\bin\activate
 ) else (
-    echo [GRESKA] Virtual environment ne postoji!
-    echo Pokrenite install.bat prvo.
-    pause
-    exit /b 1
+    echo [INFO] Pokretam bez virtual environmenta...
 )
 
 REM Start desktop app

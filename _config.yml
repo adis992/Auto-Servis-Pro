@@ -1,0 +1,21 @@
+# Auto Servis Pro - GitHub Pages Configuration
+
+# Use docs folder for GitHub Pages
+source: docs
+
+# Exclude README files
+exclude:
+  - README.md
+  - README_COMPLETE.md
+  - README*.md
+  - "*.bat"
+  - "*.sh"
+  - "*.py"
+  - requirements.txt
+  - buildozer.spec
+  - narudzbe/
+  - output/
+  - logs/
+  - .venv/
+  - .vscode/
+  - .git/

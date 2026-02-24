@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Servis Pro - Web Panel</title>
+    <script>
+        if (sessionStorage.redirect) {
+            var redirect = sessionStorage.redirect;
+            delete sessionStorage.redirect;
+            window.location.href = redirect;
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+        .header-info {
+            text-align: right;
+        }
+        .header-info p {
+            color: #666;
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .header-role {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+        }
+        .sidebar {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            height: fit-content;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .nav-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: #667eea;
+            color: white;
+            border-left: 4px solid #764ba2;
+        }
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border 0.3s;
+            font-family: inherit;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-secondary {
+            background: #999;
+        }
+        .btn-secondary:hover {
+            background: #777;
+        }
+        .btn-danger {
+            background: #e74c3c;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+        .error {
+            background: #fce4e6;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .list-item {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .item-subtitle {
+            font-size: 13px;
+            color: #999;
+        }
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .auth-section {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 450px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        .logo p {
+            color: #888;
+            font-size: 14px;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        .card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .card h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .card p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+        .logout-btn {
+            width: 100%;
+            margin-top: 20px;
+            background: #e74c3c;
+        }
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-scheduled {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .status-completed {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        .status-cancelled {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+        .admin-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        .admin-panel h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                height: auto;
+            }
+            .nav-item {
+                padding: 10px;
+                font-size: 13px;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Section -->
+    <div id="auth-container" class="auth-section">
+        <div class="auth-box">
+            <div class="logo">
+                <h1>🚗 Auto Servis Pro</h1>
+                <p>Web Panel v2.0</p>
+            </div>
+
+            <div id="auth-error" class="message error"></div>
+            <div id="auth-success" class="message success"></div>
+
+            <div class="tabs">
+                <button class="tab active" onclick="showAuthTab('login')">Prijava</button>
+                <button class="tab" onclick="showAuthTab('register')">Registracija</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>📧 Email ili Username</label>
+                    <input type="text" id="login-username" placeholder="admin ili admin@autoservis.com" required>
+                </div>
+                <div class="form-group">
+                    <label>🔐 Lozinka</label>
+                    <input type="password" id="login-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn">Prijavi se</button>
+                <p style="margin-top: 15px; text-align: center; color: #888; font-size: 13px;">
+                    💡 Demo račun: <b>admin</b> / <b>admin123</b> ili <b>user</b> / <b>user123</b>
+                </p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+                <div class="form-group">
+                    <label>📧 Email</label>
+                    <input type="email" id="reg-email" placeholder="ime@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>👤 Username</label>
+                    <input type="text" id="reg-username" placeholder="korisnicko_ime" required>
+                </div>
+                <div class="form-group">
+                    <label>🔐 Lozinka</label>
+                    <input type="password" id="reg-password" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>🔐 Potvrdi Lozinku</label>
+                    <input type="password" id="reg-confirm" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>📝 Puno Ime</label>
+                    <input type="text" id="reg-fullname" placeholder="Ime Prezime">
+                </div>
+                <div class="form-group">
+                    <label>📞 Telefon</label>
+                    <input type="tel" id="reg-phone" placeholder="+381 60 123 4567">
+                </div>
+                <button type="submit" class="btn">Registruj se</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-container" class="hidden">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <div>
+                    <h1>🚗 Auto Servis Pro</h1>
+                </div>
+                <div class="header-info">
+                    <p id="user-greeting">Dobrodošao!</p>
+                    <p id="user-email"></p>
+                    <div class="header-role" id="user-role-badge">USER</div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Sidebar Navigation -->
+                <div class="sidebar">
+                    <button class="nav-item active" onclick="showSection('dashboard')">📊 Dashboard</button>
+                    <button class="nav-item" onclick="showSection('vehicles')">🚗 Vozila</button>
+                    <button class="nav-item" onclick="showSection('appointments')">📅 Narudžbe</button>
+                    <button class="nav-item" onclick="showSection('services')">🔧 Usluge</button>
+                    <button class="nav-item" onclick="showSection('notifications')">🔔 Notifikacije</button>
+                    <button class="nav-item" onclick="showSection('profile')">👤 Profil</button>
+                    <div id="admin-nav" class="hidden">
+                        <button class="nav-item" onclick="showSection('admin')">⚙️ Admin Panel</button>
+                    </div>
+                    <button class="nav-item logout-btn" onclick="handleLogout()">Odjavi se</button>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content-area">
+                    <!-- Dashboard Section -->
+                    <div id="dashboard" class="section active">
+                        <h2>📊 Dashboard</h2>
+                        <div class="grid-3">
+                            <div class="card" onclick="showSection('vehicles')">
+                                <h3 id="vehicles-count">0</h3>
+                                <p>Vozila</p>
+                            </div>
+                            <div class="card" onclick="showSection('appointments')">
+                                <h3 id="appointments-count">0</h3>
+                                <p>Narudžbe</p>
+                            </div>
+                            <div class="card" onclick="showSection('notifications')">
+                                <h3 id="notifications-count">0</h3>
+                                <p>Obaveštenja</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicles Section -->
+                    <div id="vehicles" class="section">
+                        <h2>🚗 Moja Vozila</h2>
+                        <div id="vehicles-error" class="message error"></div>
+                        <div id="vehicles-success" class="message success"></div>
+                        
+                        <h3 style="margin-top: 20px; margin-bottom: 15px; color: #333;">Dodaj novo vozilo</h3>
+                        <form onsubmit="handleAddVehicle(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Marka</label>
+                                    <input type="text" id="vehicle-make" placeholder="npr. BMW, Mercedes..." required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Model</label>
+                                    <input type="text" id="vehicle-model" placeholder="npr. 320, E220..." required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Godište</label>
+                                    <input type="number" id="vehicle-year" placeholder="2020" min="1990" max="2030">
+                                </div>
+                                <div class="form-group">
+                                    <label>VIN</label>
+                                    <input type="text" id="vehicle-vin" placeholder="Identifikacijski broj vozila">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Registarska tablica</label>
+                                    <input type="text" id="vehicle-license" placeholder="npr. BG-123-AB">
+                                </div>
+                                <div class="form-group">
+                                    <label>Boja</label>
+                                    <input type="text" id="vehicle-color" placeholder="npr. Crna, Bijela...">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Vrsta motora</label>
+                                    <select id="vehicle-engine">
+                                        <option value="">-- Odaberi --</option>
+                                        <option value="Benzin">Benzin</option>
+                                        <option value="Dizel">Dizel</option>
+                                        <option value="Hybrid">Hibrid</option>
+                                        <option value="Električni">Električni</option>
+                                        <option value="Plin">Plin</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Kilometraža</label>
+                                    <input type="number" id="vehicle-mileage" placeholder="Prijedeni kilometri" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Napomene</label>
+                                <textarea id="vehicle-notes" placeholder="Dodatne informacije..." style="min-height: 80px;"></textarea>
+                            </div>
+                            <button type="submit" class="btn">➕ Dodaj vozilo</button>
+                        </form>
+
+                        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333;">Moja vozila</h3>
+                        <div id="vehicles-list"></div>
+                    </div>
+
+                    <!-- Appointments Section -->
+                    <div id="appointments" class="section">
+                        <h2>📅 Moje Narudžbe</h2>
+                        <div id="appointments-error" class="message error"></div>
+                        <div id="appointments-success" class="message success"></div>
+
+                        <h3 style="margin-top: 20px; margin-bottom: 15px; color: #333;">Kreiraj novu narudžbu</h3>
+                        <form onsubmit="handleAddAppointment(event)">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Vozilo</label>
+                                    <select id="appointment-vehicle" required>
+                                        <option value="">-- Odaberi vozilo --</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Usluga</label>
+                                    <select id="appointment-service" required>
+                                        <option value="">-- Odaberi uslugu --</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Datum i vrijeme</label>
+                                    <input type="datetime-local" id="appointment-date" required>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Napomene</label>
+                                <textarea id="appointment-notes" placeholder="Dodatne informacije za servis..." style="min-height: 80px;"></textarea>
+                            </div>
+                            <button type="submit" class="btn">📅 Kreiraj narudžbu</button>
+                        </form>
+
+                        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #333;">Moje narudžbe</h3>
+                        <div id="appointments-list"></div>
+                    </div>
+
+                    <!-- Services Section -->
+                    <div id="services" class="section">
+                        <h2>🔧 Dostupne Usluge</h2>
+                        <div id="services-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;"></div>
+                    </div>
+
+                    <!-- Notifications Section -->
+                    <div id="notifications" class="section">
+                        <h2>🔔 Moja Obaveštenja</h2>
+                        <div id="notifications-list"></div>
+                    </div>
+
+                    <!-- Profile Section -->
+                    <div id="profile" class="section">
+                        <h2>👤 Moj Profil</h2>
+                        <div id="profile-error" class="message error"></div>
+                        <div id="profile-success" class="message success"></div>
+                        
+                        <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                            <p><strong>Username:</strong> <span id="profile-username"></span></p>
+                            <p><strong>Email:</strong> <span id="profile-email"></span></p>
+                            <p><strong>Puno Ime:</strong> <span id="profile-fullname"></span></p>
+                            <p><strong>Telefon:</strong> <span id="profile-phone"></span></p>
+                            <p><strong>Uloga:</strong> <span id="profile-role"></span></p>
+                            <p><strong>Član od:</strong> <span id="profile-created"></span></p>
+                        </div>
+
+                        <h3 style="margin-bottom: 15px; color: #333;">Promijeni lozinku</h3>
+                        <form onsubmit="handleChangePassword(event)">
+                            <div class="form-group">
+                                <label>Stara lozinka</label>
+                                <input type="password" id="old-password" placeholder="••••••••" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nova lozinka</label>
+                                <input type="password" id="new-password" placeholder="••••••••" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Potvrdi novu lozinku</label>
+                                <input type="password" id="confirm-password" placeholder="••••••••" required>
+                            </div>
+                            <button type="submit" class="btn">Promijeni lozinku</button>
+                        </form>
+                    </div>
+
+                    <!-- Admin Panel Section -->
+                    <div id="admin" class="section">
+                        <h2>⚙️ Admin Panel</h2>
+                        
+                        <div class="admin-panel">
+                            <h3>🔧 Upravljanje Uslugama</h3>
+                            <form onsubmit="handleAddService(event)" style="margin-bottom: 20px;">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Naziv Usluge</label>
+                                        <input type="text" id="service-name" placeholder="npr. Zamjena ulja..." required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cijena (€)</label>
+                                        <input type="number" id="service-price" placeholder="0.00" step="0.01" required>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Kategorija</label>
+                                        <input type="text" id="service-category" placeholder="npr. Održavanje" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Trajanje (minute)</label>
+                                        <input type="number" id="service-duration" placeholder="60" min="15" value="60">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Opis</label>
+                                    <textarea id="service-description" placeholder="Detaljni opis usluge..." style="min-height: 80px;"></textarea>
+                                </div>
+                                <button type="submit" class="btn">➕ Dodaj Uslugu</button>
+                            </form>
+
+                            <h4 style="color: white; margin-top: 20px; margin-bottom: 15px;">Sve Usluge</h4>
+                            <div id="admin-services-list"></div>
+                        </div>
+
+                        <div class="admin-panel">
+                            <h3>📊 Statistika</h3>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px;">
+                                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;">
+                                    <p style="font-size: 20px; font-weight: 600;" id="admin-total-users">0</p>
+                                    <p style="font-size: 13px; opacity: 0.8;">Ukupno Korisnika</p>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;">
+                                    <p style="font-size: 20px; font-weight: 600;" id="admin-total-appointments">0</p>
+                                    <p style="font-size: 13px; opacity: 0.8;">Ukupno Narudžbi</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // GITHUB PAGES MODE - Radi sa demo podacima (bez API)
+        const API_URL = 'http://localhost:7000/api';
+        const DEMO_MODE = window.location.hostname.includes('github.io');
+        let currentUser = null;
+        let currentToken = null;
+
+        // Demo podaci za GitHub Pages
+        const DEMO_USERS = {
+            'admin': { username: 'admin', email: 'admin@autoservis.com', full_name: 'Administrator', role: 'admin', phone: '+381601234567', created_at: '2026-01-01' },
+            'user': { username: 'user', email: 'user@test.com', full_name: 'Test Korisnik', role: 'user', phone: '+381609876543', created_at: '2026-01-15' }
+        };
+
+        const DEMO_SERVICES = [
+            { id: 1, name: 'Redovan servis', description: 'Zamena ulja, filtera i pregled vozila', price: 80.00, duration_minutes: 90, category: 'Održavanje' },
+            { id: 2, name: 'Mali servis', description: 'Zamena ulja i filtera', price: 50.00, duration_minutes: 60, category: 'Održavanje' },
+            { id: 3, name: 'Veliki servis', description: 'Kompletan pregled i zamena delova', price: 150.00, duration_minutes: 180, category: 'Održavanje' },
+            { id: 4, name: 'Dijagnostika', description: 'Kompjuterska dijagnostika vozila', price: 30.00, duration_minutes: 30, category: 'Dijagnostika' },
+            { id: 5, name: 'Popravka kočnica', description: 'Zamena pločica i diskova', price: 120.00, duration_minutes: 120, category: 'Kočni sistem' },
+            { id: 6, name: 'Zamena ulja', description: 'Zamena motornog ulja i filtera', price: 40.00, duration_minutes: 45, category: 'Održavanje' },
+            { id: 7, name: 'Zamena guma', description: 'Sezonska zamena pneumatika', price: 25.00, duration_minutes: 30, category: 'Gume' },
+            { id: 8, name: 'Geometrija točkova', description: 'Podešavanje geometrije', price: 35.00, duration_minutes: 60, category: 'Trapezarija' }
+        ];
+
+        let DEMO_VEHICLES = [];
+        let DEMO_APPOINTMENTS = [];
+        let demoIdCounter = 1;
+
+        // ====================  AUTH FUNCTIONS ====================
+
+        function showAuthTab(tab) {
+            if (tab === 'login') {
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('register-form').classList.add('hidden');
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.querySelectorAll('.tab')[1].classList.remove('active');
+            } else {
+                document.getElementById('login-form').classList.add('hidden');
+                document.getElementById('register-form').classList.remove('hidden');
+                document.querySelectorAll('.tab')[0].classList.remove('active');
+                document.querySelectorAll('.tab')[1].classList.add('active');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (DEMO_MODE) {
+                // GitHub Pages demo mode
+                if ((username === 'admin' && password === 'admin123') || (username === 'user' && password === 'user123')) {
+                    currentUser = DEMO_USERS[username];
+                    currentToken = 'demo-token-' + Date.now();
+                    localStorage.setItem('token', currentToken);
+                    localStorage.setItem('user', JSON.stringify(currentUser));
+                    showApp();
+                    loadDashboard();
+                } else {
+                    showAuthError('Pogrešan username ili lozinka! Demo: admin/admin123 ili user/user123');
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.token) {
+                    currentUser = data.user;
+                    currentToken = data.token;
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    showApp();
+                    loadDashboard();
+                } else {
+                    showAuthError(data.error || 'Greška pri prijavi');
+                }
+            } catch (err) {
+                showAuthError('API server nije dostupan. Pokrenite Desktop aplikaciju!');
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const email = document.getElementById('reg-email').value;
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            const full_name = document.getElementById('reg-fullname').value;
+            const phone = document.getElementById('reg-phone').value;
+
+            if (password !== confirm) {
+                showAuthError('Lozinke se ne poklapaju!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, username, password, full_name, phone })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.token) {
+                    showAuthSuccess('✅ Registracija uspešna! Prijavite se sa vašim podacima.');
+                    showAuthTab('login');
+                    document.getElementById('register-form').reset();
+                } else {
+                    showAuthError(data.error || 'Greška pri registraciji');
+                }
+            } catch (err) {
+                showAuthError('API server nije dostupan');
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('Siguran si da se želiš odjaviti?')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                currentUser = null;
+                currentToken = null;
+                showAuth();
+            }
+        }
+
+        function showAuthError(msg) {
+            const el = document.getElementById('auth-error');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showAuthSuccess(msg) {
+            const el = document.getElementById('auth-success');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        // ====================  APP FUNCTIONS ====================
+
+        function showAuth() {
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('hidden');
+        }
+
+        function showApp() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            updateHeader();
+        }
+
+        function updateHeader() {
+            document.getElementById('user-greeting').textContent = `Dobrodošao, ${currentUser.full_name || currentUser.username}!`;
+            document.getElementById('user-email').textContent = currentUser.email;
+            document.getElementById('user-role-badge').textContent = (currentUser.role === 'admin' ? '🔑 ADMIN' : '👤 USER').toUpperCase();
+            
+            if (currentUser.role === 'admin') {
+                document.getElementById('admin-nav').classList.remove('hidden');
+            }
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(id).classList.add('active');
+            
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+
+            if (id === 'vehicles') loadVehicles();
+            if (id === 'appointments') loadAppointments();
+            if (id === 'services') loadServices();
+            if (id === 'notifications') loadNotifications();
+            if (id === 'profile') loadProfile();
+            if (id === 'admin') loadAdminPanel();
+        }
+
+        // ====================  API FUNCTIONS ====================
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            if (DEMO_MODE) {
+                // GitHub Pages demo mode - lokalni podaci
+                return handleDemoApi(endpoint, method, body);
+            }
+
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            };
+            if (body) options.body = JSON.stringify(body);
+
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, options);
+                const data = await response.json();
+                return { ok: response.ok, data, status: response.status };
+            } catch (err) {
+                return { ok: false, data: { error: err.message }, status: 500 };
+            }
+        }
+
+        function handleDemoApi(endpoint, method, body) {
+            // Simuliraj API pozive sa lokalnim demo podacima
+            if (endpoint === '/vehicles') {
+                if (method === 'POST') {
+                    const newVehicle = { ...body, id: demoIdCounter++, user_id: 1 };
+                    DEMO_VEHICLES.push(newVehicle);
+                    return Promise.resolve({ ok: true, data: { vehicle: newVehicle } });
+                }
+                return Promise.resolve({ ok: true, data: { vehicles: DEMO_VEHICLES } });
+            }
+            
+            if (endpoint.startsWith('/vehicles/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                DEMO_VEHICLES = DEMO_VEHICLES.filter(v => v.id !== id);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/services') {
+                if (method === 'POST' && currentUser.role === 'admin') {
+                    const newService = { ...body, id: demoIdCounter++ };
+                    DEMO_SERVICES.push(newService);
+                    return Promise.resolve({ ok: true, data: { service: newService } });
+                }
+                return Promise.resolve({ ok: true, data: { services: DEMO_SERVICES } });
+            }
+
+            if (endpoint.startsWith('/services/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                const idx = DEMO_SERVICES.findIndex(s => s.id === id);
+                if (idx >= 0) DEMO_SERVICES.splice(idx, 1);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/appointments') {
+                if (method === 'POST') {
+                    const vehicle = DEMO_VEHICLES.find(v => v.id === body.vehicle_id);
+                    const service = DEMO_SERVICES.find(s => s.id === body.service_id);
+                    const newApp = {
+                        ...body,
+                        id: demoIdCounter++,
+                        user_id: 1,
+                        status: 'scheduled',
+                        total_price: service ? service.price : 0,
+                        make: vehicle ? vehicle.make : 'N/A',
+                        model: vehicle ? vehicle.model : 'N/A',
+                        service_name: service ? service.name : 'N/A'
+                    };
+                    DEMO_APPOINTMENTS.push(newApp);
+                    return Promise.resolve({ ok: true, data: { appointment: newApp } });
+                }
+                return Promise.resolve({ ok: true, data: { appointments: DEMO_APPOINTMENTS } });
+            }
+
+            if (endpoint.startsWith('/appointments/') && method === 'DELETE') {
+                const id = parseInt(endpoint.split('/')[2]);
+                DEMO_APPOINTMENTS = DEMO_APPOINTMENTS.filter(a => a.id !== id);
+                return Promise.resolve({ ok: true, data: { message: 'Deleted' } });
+            }
+
+            if (endpoint === '/notifications') {
+                return Promise.resolve({ ok: true, data: { notifications: [] } });
+            }
+
+            return Promise.resolve({ ok: true, data: {} });
+        }
+
+        // ====================  VEHICLES FUNCTIONS ====================
+
+        async function handleAddVehicle(e) {
+            e.preventDefault();
+            const body = {
+                make: document.getElementById('vehicle-make').value,
+                model: document.getElementById('vehicle-model').value,
+                year: parseInt(document.getElementById('vehicle-year').value) || null,
+                vin: document.getElementById('vehicle-vin').value || null,
+                license_plate: document.getElementById('vehicle-license').value || null,
+                color: document.getElementById('vehicle-color').value || null,
+                engine_type: document.getElementById('vehicle-engine').value || null,
+                mileage: parseInt(document.getElementById('vehicle-mileage').value) || null,
+                notes: document.getElementById('vehicle-notes').value || null
+            };
+
+            const result = await apiCall('/vehicles', 'POST', body);
+            const msgEl = document.getElementById('vehicles-success');
+            
+            if (result.ok) {
+                msgEl.textContent = '✅ Vozilo uspešno dodato!';
+                msgEl.style.display = 'block';
+                e.target.reset();
+                setTimeout(() => { msgEl.style.display = 'none'; loadVehicles(); }, 1500);
+            } else {
+                document.getElementById('vehicles-error').textContent = '❌ ' + (result.data.error || 'Greška');
+                document.getElementById('vehicles-error').style.display = 'block';
+            }
+        }
+
+        async function loadVehicles() {
+            const result = await apiCall('/vehicles');
+            const list = document.getElementById('vehicles-list');
+            
+            if (result.ok && result.data.vehicles) {
+                const vehicles = result.data.vehicles;
+                document.getElementById('vehicles-count').textContent = vehicles.length;
+                
+                list.innerHTML = vehicles.map(v => `
+                    <div class="list-item">
+                        <div class="item-info">
+                            <div class="item-title">${v.make} ${v.model} (${v.year || 'N/A'})</div>
+                            <div class="item-subtitle">📍 ${v.license_plate || 'N/A'} | 🛢️ ${v.engine_type || 'N/A'} | 🔧 ${v.mileage || 0} km</div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-small btn-danger" onclick="deleteVehicle(${v.id})">Obriši</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<p style="color: #999;">Nema dodanih vozila. Dodaj vozilo da kreneš sa narudžbama!</p>';
+            }
+        }
+
+        async function deleteVehicle(id) {
+            if (!confirm('Sigurno obrisati vozilo?')) return;
+            const result = await apiCall(`/vehicles/${id}`, 'DELETE');
+            if (result.ok) {
+                loadVehicles();
+            }
+        }
+
+        // ====================  APPOINTMENTS FUNCTIONS ====================
+
+        async function handleAddAppointment(e) {
+            e.preventDefault();
+            const vehicleId = document.getElementById('appointment-vehicle').value;
+            const serviceId = document.getElementById('appointment-service').value;
+            const date = document.getElementById('appointment-date').value;
+
+            if (!vehicleId || !serviceId || !date) {
+                document.getElementById('appointments-error').textContent = '❌ Popuni sva polja!';
+                document.getElementById('appointments-error').style.display = 'block';
+                return;
+            }
+
+            const body = {
+                vehicle_id: parseInt(vehicleId),
+                service_id: parseInt(serviceId),
+                appointment_date: date,
+                notes: document.getElementById('appointment-notes').value || null
+            };
+
+            const result = await apiCall('/appointments', 'POST', body);
+            const msgEl = document.getElementById('appointments-success');
+            
+            if (result.ok) {
+                msgEl.textContent = '✅ Narudžba uspešno kreirana!';
+                msgEl.style.display = 'block';
+                e.target.reset();
+                setTimeout(() => { msgEl.style.display = 'none'; loadAppointments(); }, 1500);
+            } else {
+                document.getElementById('appointments-error').textContent = '❌ ' + (result.data.error || 'Greška');
+                document.getElementById('appointments-error').style.display = 'block';
+            }
+        }
+
+        async function loadAppointments() {
+            const vehicleResult = await apiCall('/vehicles');
+            const serviceResult = await apiCall('/services');
+            const appointmentResult = await apiCall('/appointments');
+
+            if (vehicleResult.ok && vehicleResult.data.vehicles) {
+                const vehicleSelect = document.getElementById('appointment-vehicle');
+                vehicleSelect.innerHTML = '<option value="">-- Odaberi vozilo --</option>' + 
+                    vehicleResult.data.vehicles.map(v => `<option value="${v.id}">${v.make} ${v.model}</option>`).join('');
+            }
+
+            if (serviceResult.ok && serviceResult.data.services) {
+                const serviceSelect = document.getElementById('appointment-service');
+                serviceSelect.innerHTML = '<option value="">-- Odaberi uslugu --</option>' + 
+                    serviceResult.data.services.map(s => `<option value="${s.id}">${s.name} - €${s.price}</option>`).join('');
+            }
+
+            if (appointmentResult.ok && appointmentResult.data.appointments) {
+                const appointments = appointmentResult.data.appointments;
+                document.getElementById('appointments-count').textContent = appointments.length;
+                
+                const list = document.getElementById('appointments-list');
+                list.innerHTML = appointments.map(a => `
+                    <div class="list-item">
+                        <div class="item-info">
+                            <div class="item-title">${a.service_name} - ${a.make} ${a.model}</div>
+                            <div class="item-subtitle">📅 ${new Date(a.appointment_date).toLocaleString('sr-RS')} | 💰 €${a.total_price || 0} | <span class="status-badge status-${a.status}">${a.status}</span></div>
+                        </div>
+                        <div class="item-actions">
+                            <button class="btn btn-small btn-danger" onclick="deleteAppointment(${a.id})">Otkaži</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function deleteAppointment(id) {
+            if (!confirm('Sigurno otkazati narudžbu?')) return;
+            const result = await apiCall(`/appointments/${id}`, 'DELETE');
+            if (result.ok) {
+                loadAppointments();
+            }
+        }
+
+        // ====================  SERVICES FUNCTIONS ====================
+
+        async function loadServices() {
+            const result = await apiCall('/services');
+            const list = document.getElementById('services-list');
+            
+            if (result.ok && result.data.services) {
+                list.innerHTML = result.data.services.map(s => `
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border-left: 4px solid #667eea;">
+                        <h4 style="color: #333; margin-bottom: 8px;">${s.name}</h4>
+                        <p style="color: #666; font-size: 13px; margin-bottom: 10px; line-height: 1.5;">${s.description || 'Nema opisa'}</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="color: #667eea; font-weight: 600; font-size: 16px; margin-bottom: 3px;">€${s.price}</p>
+                                <p style="color: #999; font-size: 12px;">${s.duration_minutes} min | ${s.category || 'N/A'}</p>
+                            </div>
+                            <button class="btn btn-small" onclick="selectService(${s.id})">Odaberi</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function selectService(serviceId) {
+            document.getElementById('appointment-service').value = serviceId;
+            showSection('appointments');
+        }
+
+        // ====================  NOTIFICATIONS FUNCTIONS ====================
+
+        async function loadNotifications() {
+            const result = await apiCall('/notifications');
+            const list = document.getElementById('notifications-list');
+            
+            if (result.ok && result.data.notifications && result.data.notifications.length > 0) {
+                document.getElementById('notifications-count').textContent = result.data.notifications.length;
+                list.innerHTML = result.data.notifications.map(n => `
+                    <div class="list-item" style="border-left-color: ${n.is_read ? '#ccc' : '#667eea'};">
+                        <div class="item-info">
+                            <div class="item-title">${n.title}</div>
+                            <div class="item-subtitle">${n.message}</div>
+                            <div style="font-size: 12px; color: #999; margin-top: 5px;">${new Date(n.sent_at).toLocaleString('sr-RS')}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('notifications-count').textContent = '0';
+                list.innerHTML = '<p style="color: #999;">Nema obaveštenja.</p>';
+            }
+        }
+
+        // ====================  PROFILE FUNCTIONS ====================
+
+        function loadProfile() {
+            document.getElementById('profile-username').textContent = currentUser.username;
+            document.getElementById('profile-email').textContent = currentUser.email;
+            document.getElementById('profile-fullname').textContent = currentUser.full_name || 'Nije postavljeno';
+            document.getElementById('profile-phone').textContent = currentUser.phone || 'Nije postavljeno';
+            document.getElementById('profile-role').textContent = currentUser.role === 'admin' ? '🔑 Administrator' : '👤 Korisnik';
+            document.getElementById('profile-created').textContent = new Date(currentUser.created_at).toLocaleDateString('sr-RS');
+        }
+
+        async function handleChangePassword(e) {
+            e.preventDefault();
+            const oldPass = document.getElementById('old-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirm = document.getElementById('confirm-password').value;
+
+            if (newPass !== confirm) {
+                document.getElementById('profile-error').textContent = '❌ Nove lozinke se ne poklapaju!';
+                document.getElementById('profile-error').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('profile-success').textContent = '✅ Lozinka uspešno promenjena!';
+            document.getElementById('profile-success').style.display = 'block';
+            e.target.reset();
+        }
+
+        // ====================  ADMIN FUNCTIONS ====================
+
+        async function loadAdminPanel() {
+            const appointmentsResult = await apiCall('/appointments');
+
+            if (currentUser.role !== 'admin') {
+                document.getElementById('admin').innerHTML = '<p>Nemate pristup Admin panelu!</p>';
+                return;
+            }
+
+            if (appointmentsResult.ok && appointmentsResult.data.appointments) {
+                document.getElementById('admin-total-appointments').textContent = appointmentsResult.data.appointments.length;
+            }
+
+            loadAdminServices();
+        }
+
+        async function handleAddService(e) {
+            e.preventDefault();
+            if (currentUser.role !== 'admin') {
+                alert('Samo admin može dodavati usluge!');
+                return;
+            }
+
+            const body = {
+                name: document.getElementById('service-name').value,
+                price: parseFloat(document.getElementById('service-price').value),
+                category: document.getElementById('service-category').value,
+                duration_minutes: parseInt(document.getElementById('service-duration').value),
+                description: document.getElementById('service-description').value
+            };
+
+            const result = await apiCall('/services', 'POST', body);
+            if (result.ok) {
+                alert('✅ Usluga dodana!');
+                e.target.reset();
+                loadAdminServices();
+            } else {
+                alert('❌ Greška: ' + (result.data.error || 'Neznana greška'));
+            }
+        }
+
+        async function loadAdminServices() {
+            const result = await apiCall('/services');
+            const list = document.getElementById('admin-services-list');
+
+            if (result.ok && result.data.services) {
+                list.innerHTML = result.data.services.map(s => `
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: 600;">${s.name}</p>
+                            <p style="font-size: 13px; opacity: 0.9;">€${s.price} | ${s.duration_minutes} min | ${s.category}</p>
+                        </div>
+                        <button class="btn btn-small btn-danger" onclick="deleteService(${s.id})" style="background: rgba(255,255,255,0.2);">Obriši</button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function deleteService(id) {
+            if (!confirm('Sigurno obrisati uslugu?')) return;
+            const result = await apiCall(`/services/${id}`, 'DELETE');
+            if (result.ok) {
+                loadAdminServices();
+            }
+        }
+
+        // ====================  DASHBOARD ====================
+
+        async function loadDashboard() {
+            const vehiclesResult = await apiCall('/vehicles');
+            const appointmentsResult = await apiCall('/appointments');
+            const notificationsResult = await apiCall('/notifications');
+
+            if (vehiclesResult.ok && vehiclesResult.data.vehicles) {
+                document.getElementById('vehicles-count').textContent = vehiclesResult.data.vehicles.length;
+            }
+            if (appointmentsResult.ok && appointmentsResult.data.appointments) {
+                document.getElementById('appointments-count').textContent = appointmentsResult.data.appointments.length;
+            }
+            if (notificationsResult.ok && notificationsResult.data.notifications) {
+                document.getElementById('notifications-count').textContent = notificationsResult.data.notifications.length;
+            }
+        }
+
+        // ====================  INITIALIZATION ====================
+
+        window.addEventListener('load', () => {
+            const savedToken = localStorage.getItem('token');
+            const savedUser = localStorage.getItem('user');
+
+            if (savedToken && savedUser) {
+                currentToken = savedToken;
+                currentUser = JSON.parse(savedUser);
+                showApp();
+                loadDashboard();
+            } else {
+                showAuth();
+            }
+        });
+    </script>
+</body>
+</html>
